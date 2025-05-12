@@ -34,6 +34,13 @@ namespace RedGaint.Games.Core
                 Vector3 localOffset = new Vector3(i * spacing.x, i * spacing.y, 0);
                 card.transform.position = initialGroup.position + (Vector3)startOffset + localOffset;
                 card.transform.SetParent(initialGroup, true); // true = keep world pos
+
+                // Set sorting order based on index
+                SpriteRenderer renderer = card.GetComponent<SpriteRenderer>();
+                if (renderer != null)
+                {
+                    renderer.sortingOrder = i; // Higher index = on top
+                }
             }
         }
     }

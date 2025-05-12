@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace RedGaint.Games.Core
 {
@@ -16,7 +18,7 @@ namespace RedGaint.Games.Core
         public Vector2 size = new Vector2(5f, 2f);
         public Vector2 slotSpacing = new Vector2(0.6f, 1.0f); // spacing between cards
         public int maxSlots = 10;
-        public GroupPivot pivot = GroupPivot.Left; // default to Left for intuitive placement
+        public GroupPivot pivot = GroupPivot.Left;
 
         public event Action OnSizeChanged;
 
@@ -32,6 +34,57 @@ namespace RedGaint.Games.Core
             }
         }
 #endif
+
+        public Vector3 GetNextCardPosition()
+        {
+            List<Vector3> allSlots = GetAllSlotPositions();
+            var usedPositions = transform.Cast<Transform>().Select(t => t.localPosition).ToList();
+
+            foreach (var slot in allSlots)
+            {
+                bool taken = usedPositions.Any(pos => Vector3.Distance(pos, slot) < 0.01f);
+                if (!taken)
+                {
+                    return slot;
+                }
+            }
+
+            // fallback if all slots are taken
+            return allSlots.Last();
+        }
+
+        public List<Vector3> GetAllSlotPositions()
+        {
+            List<Vector3> slots = new List<Vector3>();
+            float totalWidth = maxSlots * slotSpacing.x;
+
+            Vector2 startOffset;
+            switch (pivot)
+            {
+                case GroupPivot.Left:
+                    startOffset = Vector2.zero;
+                    break;
+                case GroupPivot.Right:
+                    startOffset = new Vector2(-totalWidth, 0f);
+                    break;
+                case GroupPivot.Center:
+                default:
+                    startOffset = new Vector2(-totalWidth / 2f, 0f);
+                    break;
+            }
+
+            for (int i = 0; i < maxSlots; i++)
+            {
+                Vector3 slot = new Vector3(
+                    startOffset.x + i * slotSpacing.x + slotSpacing.x / 2f,
+                    startOffset.y,
+                    0f
+                );
+                slots.Add(slot);
+            }
+
+            return slots;
+        }
 
         public void TriggerRedraw()
         {
@@ -51,40 +104,19 @@ namespace RedGaint.Games.Core
 
         public Vector3 GetSnapPosition(Vector3 dropPosition)
         {
-            Rect worldRect = GetWorldRect();
-            Vector2 basePos;
-
-            switch (pivot)
-            {
-                case GroupPivot.Left:
-                    basePos = new Vector2(worldRect.xMin, worldRect.center.y);
-                    break;
-                case GroupPivot.Right:
-                    basePos = new Vector2(worldRect.xMax - (maxSlots * slotSpacing.x), worldRect.center.y);
-                    break;
-                case GroupPivot.Center:
-                default:
-                    float totalWidth = maxSlots * slotSpacing.x;
-                    basePos = new Vector2(worldRect.center.x - totalWidth / 2f, worldRect.center.y);
-                    break;
-            }
+            var allSlots = GetAllSlotPositions();
+            Vector3 localDrop = transform.InverseTransformPoint(dropPosition);
 
             float closestDist = float.MaxValue;
-            Vector3 closestSlot = basePos;
+            Vector3 closestSlot = allSlots[0];
 
-            for (int i = 0; i < maxSlots; i++)
+            foreach (var slot in allSlots)
             {
-                Vector3 slotPos = new Vector3(
-                    basePos.x + i * slotSpacing.x + slotSpacing.x / 2f,
-                    basePos.y,
-                    0f
-                );
-
-                float dist = Vector3.Distance(dropPosition, slotPos);
+                float dist = Vector3.Distance(localDrop, slot);
                 if (dist < closestDist)
                 {
                     closestDist = dist;
-                    closestSlot = slotPos;
+                    closestSlot = slot;
                 }
             }
 

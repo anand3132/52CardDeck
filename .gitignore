@@ -2,3 +2,6 @@
 Logs
 *.sln
 *.csproj
+Temp
+obj
+.idea
