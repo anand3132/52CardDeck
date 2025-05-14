@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.Rendering;
@@ -18,8 +19,10 @@ namespace RedGaint.Games.Core
     {
         public Vector2 size = new Vector2(5f, 2f);
         public Vector2 slotSpacing = new Vector2(0.6f, 1.0f);
-        public int maxSlots = 10;
+        public int maxSlots = 24;
         public GroupPivot pivot = GroupPivot.Left;
+
+        public SpriteRenderer defaultSpriteRenderer;
 
         private OutlineDrawer outlineDrawer;
         private BoxCollider2D boxCollider;
@@ -75,6 +78,18 @@ namespace RedGaint.Games.Core
         {
             return GetWorldRect().Contains(worldPoint);
         }
+        
+        
+        // public bool ContainsPoint(Vector2 worldPoint)
+        // {
+        //     if (boxCollider == null)
+        //         boxCollider = GetComponent<BoxCollider2D>();
+        //
+        //     Bounds bounds = boxCollider.bounds;
+        //     bounds.Expand(0.1f); 
+        //     return bounds.Contains(worldPoint);
+        // }
+
 
         public void RearrangeCards()
         {
@@ -109,7 +124,6 @@ namespace RedGaint.Games.Core
                 outlineDrawer.RedrawFromCard();
             }
         }
-        public SpriteRenderer defaultSpriteRenderer;
 
         private void UpdateColliderSize()
         {
@@ -120,7 +134,6 @@ namespace RedGaint.Games.Core
             {
                 Bounds bounds = defaultSpriteRenderer.bounds;
 
-                // Convert world size to local size relative to parent
                 Vector2 localSize = transform.InverseTransformVector(bounds.size);
                 Vector2 localCenter = (Vector2)transform.InverseTransformPoint(bounds.center);
 
@@ -129,7 +142,6 @@ namespace RedGaint.Games.Core
             }
             else
             {
-                // fallback to calculated slot-based sizing
                 int cardCount = Mathf.Max(transform.childCount, 1);
                 float width = Mathf.Min(cardCount, maxSlots) * slotSpacing.x;
                 float height = size.y;
@@ -145,6 +157,16 @@ namespace RedGaint.Games.Core
                 };
 
                 boxCollider.offset = new Vector2(offsetX, 0f);
+            }
+        }
+
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            if (other != null && other.transform.parent != this.transform)
+            {
+                Debug.Log("CardGroup accepted: " + other.name);
+                other.transform.SetParent(transform);
+                RearrangeCards();
             }
         }
     }

@@ -123,11 +123,20 @@ namespace RedGaint.Games.Core
             var allGroups = GameObject.FindObjectsOfType<CardGroup>();
             CardGroup dropTarget = allGroups.FirstOrDefault(g => g.ContainsPoint(worldPos));
 
+            if (dropTarget == null && lastTriggeredGroup != null)
+            {
+                Debug.Log("Fallback: Using last triggered group instead of pointer position.");
+                dropTarget = lastTriggeredGroup;
+            }
+
             if (dropTarget != null)
                 HandleDropTargetFound(dropTarget, worldPos);
             else
                 HandleNoDropTargetFound();
+
+            lastTriggeredGroup = null;
         }
+
 
         private void HandleDropTargetFound(CardGroup dropTarget, Vector3 worldPos)
         {
@@ -169,5 +178,18 @@ namespace RedGaint.Games.Core
 
             CurrentGroup?.RearrangeCards();
         }
+        
+        private CardGroup lastTriggeredGroup = null;
+
+        
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            var group = other.GetComponent<CardGroup>();
+            if (group != null)
+            {
+                lastTriggeredGroup = group;
+            }
+        }
+
     }
 }
