@@ -112,7 +112,7 @@ namespace RedGaint.Games.Core
 
             if (renderers == null || renderers.Count == 0)
             {
-                Debug.Log("<color=red>OutlineDrawer: No 'Visual' renderers found. Drawing default outline.</color>");
+//                Debug.Log("<color=red>OutlineDrawer: No 'Visual' renderers found. Drawing default outline.</color>");
                 DrawDefault1();
                 return;
             }

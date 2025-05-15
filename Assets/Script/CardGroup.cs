@@ -6,12 +6,12 @@ using UnityEngine.Rendering;
 
 namespace RedGaint.Games.Core
 {
-    public enum GroupPivot
-    {
-        Center,
-        Left,
-        Right
-    }
+    // public enum GroupPivot
+    // {
+    //     Center,
+    //     Left,
+    //     Right
+    // }
 
     [ExecuteAlways]
     [RequireComponent(typeof(BoxCollider2D))]
@@ -20,7 +20,7 @@ namespace RedGaint.Games.Core
         public Vector2 size = new Vector2(5f, 2f);
         public Vector2 slotSpacing = new Vector2(0.6f, 1.0f);
         public int maxSlots = 24;
-        public GroupPivot pivot = GroupPivot.Left;
+        // public GroupPivot pivot = GroupPivot.Left;
 
         public SpriteRenderer defaultSpriteRenderer;
 
@@ -34,7 +34,36 @@ namespace RedGaint.Games.Core
             boxCollider.isTrigger = true;
             UpdateColliderSize();
         }
+        [SerializeField] private  List<Card> SelectedCards = new List<Card>();
 
+        public void AddSelectedCard(Card card)
+        {
+            if (card == null)
+                return;
+            if( SelectedCards.Contains(card))
+                return;
+            
+            SelectedCards.Add(card);
+        }
+
+        public void RemoveSelectedCard(Card card)
+        {
+            if (card == null)
+                return;
+            if(!SelectedCards.Contains(card))
+                return;
+            SelectedCards.Remove(card);
+        }
+
+        public List<Card> GetSelectedCards()
+        {
+            Debug.Log("<color=red>GetSelectedCards:count  </color>"+SelectedCards.Count);
+            return SelectedCards;
+        }
+        public void ClearSelectedCards()
+        {
+            SelectedCards.Clear();
+        }
         public Vector3 GetNextCardPosition()
         {
             List<Vector3> allSlots = GetAllSlotPositions();
@@ -47,13 +76,14 @@ namespace RedGaint.Games.Core
             List<Vector3> slots = new List<Vector3>();
             float totalWidth = (maxSlots - 1) * slotSpacing.x;
 
-            Vector2 startOffset = pivot switch
-            {
-                GroupPivot.Left => Vector2.zero,
-                GroupPivot.Right => new Vector2(-totalWidth, 0f),
-                GroupPivot.Center => new Vector2(-totalWidth / 2f, 0f),
-                _ => Vector2.zero
-            };
+            Vector2 startOffset = Vector2.zero;
+            //     = pivot switch
+            // {
+            //     GroupPivot.Left => Vector2.zero,
+            //     GroupPivot.Right => new Vector2(-totalWidth, 0f),
+            //     GroupPivot.Center => new Vector2(-totalWidth / 2f, 0f),
+            //     _ => Vector2.zero
+            // };
 
             for (int i = 0; i < maxSlots; i++)
             {
@@ -78,18 +108,6 @@ namespace RedGaint.Games.Core
         {
             return GetWorldRect().Contains(worldPoint);
         }
-        
-        
-        // public bool ContainsPoint(Vector2 worldPoint)
-        // {
-        //     if (boxCollider == null)
-        //         boxCollider = GetComponent<BoxCollider2D>();
-        //
-        //     Bounds bounds = boxCollider.bounds;
-        //     bounds.Expand(0.1f); 
-        //     return bounds.Contains(worldPoint);
-        // }
-
 
         public void RearrangeCards()
         {
@@ -117,7 +135,7 @@ namespace RedGaint.Games.Core
             UpdateColliderSize();
         }
 
-        public void ReDrawOutline()
+        private void ReDrawOutline()
         {
             if (outlineDrawer != null)
             {
@@ -148,13 +166,14 @@ namespace RedGaint.Games.Core
 
                 boxCollider.size = new Vector2(width, height);
 
-                float offsetX = pivot switch
-                {
-                    GroupPivot.Left => width / 2f,
-                    GroupPivot.Center => 0f,
-                    GroupPivot.Right => -width / 2f,
-                    _ => 0f
-                };
+                float offsetX = width / 2f;
+                //     pivot switch
+                // {
+                //     GroupPivot.Left => width / 2f,
+                //     GroupPivot.Center => 0f,
+                //     GroupPivot.Right => -width / 2f,
+                //     _ => 0f
+                // };
 
                 boxCollider.offset = new Vector2(offsetX, 0f);
             }
@@ -164,7 +183,6 @@ namespace RedGaint.Games.Core
         {
             if (other != null && other.transform.parent != this.transform)
             {
-                Debug.Log("CardGroup accepted: " + other.name);
                 other.transform.SetParent(transform);
                 RearrangeCards();
             }
