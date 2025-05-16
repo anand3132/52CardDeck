@@ -177,7 +177,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f017b5dc4b524da19ff86159b70cb3c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  visual: {fileID: 2197719731292482051}
+  activeCardGroup: {fileID: 0}
+  cardVisualTransform: {fileID: 2197719731292482051}
+  lastHoveredGroup: {fileID: 0}
+  isBeingDragged: 0
+  isCardSelected: 0
 --- !u!210 &7154600049721964857
 SortingGroup:
   m_ObjectHideFlags: 0

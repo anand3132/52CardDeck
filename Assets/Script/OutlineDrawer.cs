@@ -199,5 +199,10 @@ namespace RedGaint.Games.Core
             lineRenderer.SetPositions(corners);
         }
 
+        private void OnTriggerEnter(Collider other)
+        {
+            // if(other.GetComponent<Card>())
+            //     GroupManager.Instance.CreateGroupFromCards();
+        }
     }
 }

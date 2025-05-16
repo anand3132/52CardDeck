@@ -134,6 +134,29 @@ namespace RedGaint.Games.Core
             ReDrawOutline();
             UpdateColliderSize();
         }
+        public void RearrangeCardsFromSelection()
+        {
+            List<Vector3> slotPositions = GetAllSlotPositions();
+            int count = Mathf.Min(SelectedCards.Count, slotPositions.Count);
+
+            for (int i = 0; i < count; i++)
+            {
+                Card card = SelectedCards[i];
+                Vector3 slot = slotPositions[i];
+                slot.z = -i * 0.01f;
+                card.transform.localPosition = slot;
+
+                var sortingGroup = card.GetComponent<SortingGroup>();
+                if (sortingGroup != null)
+                {
+                    sortingGroup.sortingOrder = i + 1;
+                }
+            }
+
+            ReDrawOutline();
+            UpdateColliderSize();
+        }
+
 
         private void ReDrawOutline()
         {
