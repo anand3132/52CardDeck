@@ -34,6 +34,11 @@ namespace RedGaint.Games.Core
             activeCardGroup = GetComponentInParent<CardGroup>();
             visualBaseLocalPosition = cardVisualTransform.localPosition;
 
+            SetupCollider();
+        }
+
+        private void SetupCollider()
+        {
             var visualRenderer = cardVisualTransform.GetComponent<SpriteRenderer>();
             var collider = GetComponent<BoxCollider2D>();
             if (visualRenderer != null && collider != null)
@@ -45,63 +50,93 @@ namespace RedGaint.Games.Core
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            Debug.Log("---------------- OnPointerClick ----------------");
-
             if (isBeingDragged) return;
+            ToggleCardSelection();
+        }
 
+        private void ToggleCardSelection()
+        {
             if (!isCardSelected)
             {
-                visualBaseLocalPosition = cardVisualTransform.localPosition;
-                cardVisualTransform.localPosition += Vector3.up * 0.3f;
-                isCardSelected = true;
-                activeCardGroup.AddSelectedCard(this);
+                SelectCard();
             }
             else
             {
-                cardVisualTransform.localPosition = visualBaseLocalPosition;
-                isCardSelected = false;
-                activeCardGroup.RemoveSelectedCard(this);
+                DeselectCard();
             }
+        }
+
+        private void SelectCard()
+        {
+            visualBaseLocalPosition = cardVisualTransform.localPosition;
+            cardVisualTransform.localPosition += Vector3.up * 0.3f;
+            isCardSelected = true;
+            activeCardGroup.AddSelectedCard(this);
+        }
+
+        private void DeselectCard()
+        {
+            cardVisualTransform.localPosition = visualBaseLocalPosition;
+            isCardSelected = false;
+            activeCardGroup.RemoveSelectedCard(this);
         }
 
         public void OnBeginDrag(PointerEventData eventData)
         {
-            Debug.Log("---------------- OnBeginDrag ----------------");
-
             isBeingDragged = true;
-            Vector3 screenPos = new Vector3(eventData.position.x, eventData.position.y, -mainCamera.transform.position.z);
-            Vector3 worldPos = mainCamera.ScreenToWorldPoint(screenPos);
-
+            Vector3 worldPos = GetWorldPositionFromEventData(eventData);
             dragOffsetPerCard.Clear();
-
             if (isCardSelected)
             {
                 Debug.Log("Selected, dragging multiple cards...");
-                foreach (var card in activeCardGroup.GetSelectedCards())
-                {
-                    Vector3 offset = card.transform.position - worldPos;
-                    dragOffsetPerCard[card] = offset;
-                    card.preDragWorldPosition = card.transform.position;
-                    card.previousParentGroup = card.transform.parent;
-                }
+                SetupMultiCardDrag(worldPos);
                 activeCardGroup.RearrangeCardsFromSelection();
             }
             else
             {
-                dragOffsetPerCard[this] = transform.position - worldPos;
-                preDragWorldPosition = transform.position;
-                previousParentGroup = transform.parent;
+                SetupSingleCardDrag(worldPos);
             }
+        }
+
+        private Vector3 GetWorldPositionFromEventData(PointerEventData eventData)
+        {
+            Vector3 screenPos = new Vector3(eventData.position.x, eventData.position.y, -mainCamera.transform.position.z);
+            return mainCamera.ScreenToWorldPoint(screenPos);
+        }
+
+        private void SetupMultiCardDrag(Vector3 worldPos)
+        {
+            foreach (var card in activeCardGroup.GetSelectedCards())
+            {
+                dragOffsetPerCard[card] = card.transform.position - worldPos;
+                card.preDragWorldPosition = card.transform.position;
+                card.previousParentGroup = card.transform.parent;
+            }
+        }
+
+        private void SetupSingleCardDrag(Vector3 worldPos)
+        {
+            dragOffsetPerCard[this] = transform.position - worldPos;
+            preDragWorldPosition = transform.position;
+            previousParentGroup = transform.parent;
         }
 
         public void OnDrag(PointerEventData eventData)
         {
             isBeingDragged = true;
-
-            Vector3 screenPos = new Vector3(eventData.position.x, eventData.position.y, -mainCamera.transform.position.z);
-            Vector3 worldPos = mainCamera.ScreenToWorldPoint(screenPos);
+            Vector3 worldPos = GetWorldPositionFromEventData(eventData);
             worldPos.z = 0;
 
+            UpdateCardPositionsDuringDrag(worldPos);
+
+            if (dragOffsetPerCard.Count > 1)
+            {
+                GroupManager.Instance.ShowGroupPreviewAt(worldPos);
+            }
+        }
+
+        private void UpdateCardPositionsDuringDrag(Vector3 worldPos)
+        {
             int index = 0;
             foreach (var kvp in dragOffsetPerCard)
             {
@@ -110,31 +145,16 @@ namespace RedGaint.Games.Core
                 card.transform.position = worldPos + stackOffset;
                 index++;
             }
-
-            if (dragOffsetPerCard.Count > 1)
-            {
-                GroupManager.Instance.ShowGroupPreviewAt(worldPos);
-            }
         }
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            Debug.Log("---------------- OnEndDrag ----------------");
 
             isBeingDragged = false;
-
-            Vector3 screenPos = new Vector3(eventData.position.x, eventData.position.y, -mainCamera.transform.position.z);
-            Vector3 worldPos = mainCamera.ScreenToWorldPoint(screenPos);
+            Vector3 worldPos = GetWorldPositionFromEventData(eventData);
             worldPos.z = 0;
 
-            var allGroups = GameObject.FindObjectsOfType<CardGroup>();
-            CardGroup dropTarget = allGroups.FirstOrDefault(g => g.ContainsPoint(worldPos));
-
-            if (dropTarget == null && lastHoveredGroup != null)
-            {
-                dropTarget = lastHoveredGroup;
-            }
-
+            CardGroup dropTarget = FindDropTarget(worldPos);
             dragOffsetPerCard.Clear();
 
             if (dropTarget != null)
@@ -143,84 +163,101 @@ namespace RedGaint.Games.Core
                 RevertToPreviousPosition();
 
             lastHoveredGroup = null;
+        }
 
-            Debug.Log("---------------- OnEndDrag Finished ----------------");
+        private CardGroup FindDropTarget(Vector3 worldPos)
+        {
+            var allGroups = GameObject.FindObjectsOfType<CardGroup>();
+            CardGroup dropTarget = allGroups.FirstOrDefault(g => g.ContainsPoint(worldPos));
+            return dropTarget ?? lastHoveredGroup;
         }
 
         private void ProcessSuccessfulDrop(CardGroup dropTarget, Vector3 worldPos)
         {
-            Debug.Log("---------------- ProcessSuccessfulDrop ----------------");
-
             if (dropTarget == activeCardGroup)
             {
-                transform.SetParent(dropTarget.transform, true);
-                transform.position = preDragWorldPosition;
-
-                if (isCardSelected)
-                {
-                    foreach (var card in activeCardGroup.GetSelectedCards())
-                    {
-                        if (card != this)
-                        {
-                            card.ResetCardState();
-                        }
-                    }
-                    activeCardGroup.ClearSelectedCards();
-                }
-
-                ResetCardState();
-                activeCardGroup.RearrangeCards();
+                HandleSameGroupDrop(dropTarget);
             }
             else
             {
-                if (isCardSelected)
-                {
-                    foreach (var card in activeCardGroup.GetSelectedCards())
-                    {
-                        if (card != this)
-                        {
-                            card.activeCardGroup = dropTarget;
-                            card.ResetCardState();
-                        }
-                    }
-
-                    activeCardGroup.ClearSelectedCards();
-                }
-
-                ResetCardState();
-                Vector3 localSnapPos = dropTarget.GetNextCardPosition();
-                transform.SetParent(dropTarget.transform, false);
-                transform.localPosition = localSnapPos;
-
-                activeCardGroup.RearrangeCards();
-                activeCardGroup = dropTarget;
-                dropTarget.RearrangeCards();
+                HandleDifferentGroupDrop(dropTarget);
             }
 
             previousParentGroup = dropTarget.transform;
             preDragWorldPosition = transform.position;
         }
 
+        private void HandleSameGroupDrop(CardGroup dropTarget)
+        {
+            transform.SetParent(dropTarget.transform, true);
+            transform.position = preDragWorldPosition;
+
+            if (isCardSelected)
+            {
+                ResetAllSelectedCards();
+                activeCardGroup.ClearSelectedCards();
+            }
+
+            ResetCardState();
+            activeCardGroup.RearrangeCards();
+        }
+
+        private void HandleDifferentGroupDrop(CardGroup dropTarget)
+        {
+            if (isCardSelected)
+            {
+                MoveAllSelectedCardsToNewGroup(dropTarget);
+                activeCardGroup.ClearSelectedCards();
+            }
+
+            ResetCardState();
+            MoveToNewGroup(dropTarget);
+        }
+
+        private void ResetAllSelectedCards()
+        {
+            foreach (var card in activeCardGroup.GetSelectedCards())
+            {
+                if (card != this)
+                {
+                    card.ResetCardState();
+                }
+            }
+        }
+
+        private void MoveAllSelectedCardsToNewGroup(CardGroup dropTarget)
+        {
+            foreach (var card in activeCardGroup.GetSelectedCards())
+            {
+                if (card != this)
+                {
+                    card.activeCardGroup = dropTarget;
+                    card.ResetCardState();
+                }
+            }
+        }
+
+        private void MoveToNewGroup(CardGroup dropTarget)
+        {
+            Vector3 localSnapPos = dropTarget.GetNextCardPosition();
+            transform.SetParent(dropTarget.transform, false);
+            transform.localPosition = localSnapPos;
+
+            activeCardGroup.RearrangeCards();
+            activeCardGroup = dropTarget;
+            dropTarget.RearrangeCards();
+        }
+
         private void RevertToPreviousPosition()
         {
-            Debug.Log("---------------- RevertToPreviousPosition ----------------");
-
             transform.SetParent(previousParentGroup, false);
             transform.position = preDragWorldPosition;
 
             if (isCardSelected)
             {
-                foreach (var card in activeCardGroup.GetSelectedCards())
-                {
-                    if (card != this)
-                    {
-                        card.ResetCardState();
-                    }
-                }
-
+                ResetAllSelectedCards();
                 ResetCardState();
                 activeCardGroup.ClearSelectedCards();
-
                 activeCardGroup = previousParentGroup?.GetComponent<CardGroup>();
             }
 
@@ -238,8 +275,6 @@ namespace RedGaint.Games.Core
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            Debug.Log("---------------- OnTriggerEnter2D ----------------");
-
             CardGroup group = other.GetComponent<CardGroup>();
             if (group != null)
             {

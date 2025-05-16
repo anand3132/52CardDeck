@@ -80,7 +80,7 @@ public class GroupManager : MonoBehaviour
 
     private IEnumerator BlinkOutline(GameObject outline)
     {
-        var sr = outline.GetComponent<SpriteRenderer>();
+        var sr = outline.GetComponent<LineRenderer>();
         while (outline != null)
         {
             sr.enabled = !sr.enabled;
