@@ -48,9 +48,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   size: {x: 2, y: 2}
-  slotSpacing: {x: 0.5, y: 1}
-  maxSlots: 10
-  pivot: 1
+  slotSpacing: {x: 0.3, y: 0}
+  maxSlots: 54
+  defaultSpriteRenderer: {fileID: 6486240971841345453, guid: 4e6ea72ab81d96f42ad21764a4ddf354, type: 3}
+  SelectedCards: []
 --- !u!120 &4088979512177246661
 LineRenderer:
   serializedVersion: 2

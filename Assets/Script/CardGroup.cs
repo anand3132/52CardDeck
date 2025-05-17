@@ -18,8 +18,8 @@ namespace RedGaint.Games.Core
     public class CardGroup : MonoBehaviour
     {
         public Vector2 size = new Vector2(5f, 2f);
-        public Vector2 slotSpacing = new Vector2(0.6f, 1.0f);
-        public int maxSlots = 24;
+        public Vector2 slotSpacing = new Vector2(0.3f, 0.0f);
+        public int maxSlots = 54;
         // public GroupPivot pivot = GroupPivot.Left;
 
         public SpriteRenderer defaultSpriteRenderer;
@@ -157,7 +157,38 @@ namespace RedGaint.Games.Core
             UpdateColliderSize();
         }
 
+        public List<string> GetCardIDs()
+        {
+            List<string> cardIDs = new List<string>();
+    
+            // Get all Card components from children
+            Card[] cards = GetComponentsInChildren<Card>();
+    
+            foreach (Card card in cards)
+            {
+                if (!string.IsNullOrEmpty(card.CardID))
+                {
+                    cardIDs.Add(card.CardID);
+                }
+            }
+    
+            return cardIDs;
+        }
 
+        public List<string> GetSelectedCardIDs()
+        {
+            List<string> cardIDs = new List<string>();
+    
+            foreach (Card card in SelectedCards)
+            {
+                if (!string.IsNullOrEmpty(card.CardID))
+                {
+                    cardIDs.Add(card.CardID);
+                }
+            }
+    
+            return cardIDs;
+        }
         private void ReDrawOutline()
         {
             if (outlineDrawer != null)

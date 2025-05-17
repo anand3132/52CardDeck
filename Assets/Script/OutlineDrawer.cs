@@ -18,38 +18,6 @@ namespace RedGaint.Games.Core
             RedrawFromCard();
         }
 
-        //will set up later
-        // private void Init1()
-        // {
-        //     if (lineRenderer == null)
-        //     {
-        //         lineRenderer = GetComponent<LineRenderer>();
-        //
-        //         // General outline shape settings
-        //         lineRenderer.loop = true;
-        //         lineRenderer.positionCount = 5;
-        //         lineRenderer.widthMultiplier = 0.05f;
-        //         lineRenderer.useWorldSpace = false;
-        //
-        //         // Appearance settings
-        //         lineRenderer.alignment = LineAlignment.View; // Or LineAlignment.TransformZ if you want fixed axis alignment
-        //         lineRenderer.numCapVertices = 0;
-        //         lineRenderer.numCornerVertices = 0;
-        //
-        //         // Material setup
-        //         var mat = new Material(Shader.Find("Sprites/Default"));
-        //         mat.color = Color.green;
-        //         lineRenderer.material = mat;
-        //
-        //         // reset LineRenderer positions just in case
-        //         lineRenderer.SetPositions(new Vector3[5]);
-        //     }
-        //
-        //     // Cache cardGroup and mark initialized
-        //     cardGroup = GetComponent<CardGroup>();
-        //     initialized = true;
-        // }
-        
         private void Init()
         {
             if (lineRenderer == null)
@@ -197,12 +165,6 @@ namespace RedGaint.Games.Core
             corners[4] = corners[0];
 
             lineRenderer.SetPositions(corners);
-        }
-
-        private void OnTriggerEnter(Collider other)
-        {
-            // if(other.GetComponent<Card>())
-            //     GroupManager.Instance.CreateGroupFromCards();
         }
     }
 }

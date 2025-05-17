@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 7811593650781815831}
   - component: {fileID: 7185000951911201896}
   m_Layer: 0
-  m_Name: GroupB
+  m_Name: GroupB_final
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -48,8 +48,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   size: {x: 2, y: 2}
-  slotSpacing: {x: 0.5, y: 1}
-  maxSlots: 10
+  slotSpacing: {x: 0.3, y: 1}
+  maxSlots: 54
   defaultSpriteRenderer: {fileID: 0}
   SelectedCards: []
 --- !u!120 &8743409297417506492

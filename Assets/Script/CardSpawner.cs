@@ -1,51 +1,142 @@
 ﻿using UnityEngine;
+using System.IO;
+using System.Collections.Generic;
 
 namespace RedGaint.Games.Core
 {
     public class CardSpawner : MonoBehaviour
     {
-        [Header("Card Setup")]
+        [Header("Paths")]
+        public string jsonPath = "Assets/Config/card_data.json";
+        public string spriteFolder = "Art/CardDeck"; 
+
+        [Header("Settings")]
         public GameObject cardPrefab;
-        public int numberOfCards = 5;
-
-        [Header("Spawn Settings")]
-        public Vector2 spacing = new Vector2(0.5f, 0f); // Horizontal spacing between cards
+        public Vector2 spacing = new Vector2(0.5f, 0f);
         public Vector2 startOffset = Vector2.zero;
-
-        [Header("Sorting Settings")]
+        public int sortingOrderBase = 0;
         public string sortingLayerName = "Cards";
+
+        private Dictionary<string, Sprite> loadedSprites = new Dictionary<string, Sprite>();
+        private List<string> cardCodesFromJson = new List<string>();
 
         private void Start()
         {
-            if (cardPrefab == null || GroupManager.Instance == null)
+            LoadAllSprites();
+            LoadJsonData();
+            SpawnValidatedCards();
+        }
+
+        private void LoadAllSprites()
+        {
+            Sprite[] sprites = Resources.LoadAll<Sprite>(spriteFolder);
+            
+            foreach (Sprite sprite in sprites)
             {
-                Debug.LogWarning("CardSpawner is missing required references.");
+                string key = sprite.name;
+                if (!loadedSprites.ContainsKey(key))
+                {
+                    loadedSprites.Add(key, sprite);
+                }
+            }
+            Debug.Log($"Loaded {sprites.Length} sprites from Resources/{spriteFolder}");
+        }
+
+        private void LoadJsonData()
+        {
+            string fullPath = Path.Combine(Application.dataPath, jsonPath.Replace("Assets/", ""));
+            
+            if (!File.Exists(fullPath))
+            {
+                Debug.LogError($"JSON file not found at: {fullPath}");
                 return;
             }
 
-            SpawnCards();
+            string json = File.ReadAllText(fullPath);
+            CardDataWrapper wrapper = JsonUtility.FromJson<CardDataWrapper>(json);
+            cardCodesFromJson = wrapper.data.deck;
+            Debug.Log($"Loaded {cardCodesFromJson.Count} card codes from JSON");
         }
 
-        public void SpawnCards()
+        private void SpawnValidatedCards()
         {
-            // Create a new group using the GroupManager
+            if (cardPrefab == null || GroupManager.Instance == null)
+            {
+                Debug.LogError("Missing required references (prefab or GroupManager)");
+                return;
+            }
+
             GameObject group = GroupManager.Instance.CreateEmptyGroup();
             if (group == null)
             {
-                Debug.LogError("Failed to create initial card group.");
+                Debug.LogError("Failed to create card group");
                 return;
             }
 
-            for (int i = 0; i < numberOfCards; i++)
+            int spawnedCount = 0;
+            int missingCount = 0;
+
+            for (int i = 0; i < cardCodesFromJson.Count; i++)
             {
-                GameObject card = Instantiate(cardPrefab, transform);
-                Vector3 localOffset = new Vector3(i * spacing.x, i * spacing.y, 0);
-                card.transform.position = group.transform.position + (Vector3)startOffset + localOffset;
-                card.transform.SetParent(group.transform, true);
+                string cardCode = cardCodesFromJson[i];
+                
+                if (loadedSprites.TryGetValue(cardCode, out Sprite sprite))
+                {
+                    SpawnCard(cardCode, sprite, i, group.transform);
+                    spawnedCount++;
+                }
+                else
+                {
+                    Debug.LogError($"Missing sprite for card: {cardCode}");
+                    missingCount++;
+                }
             }
 
-            // Optional: Rearrange if your group prefab has logic
+            Debug.Log($"Spawned {spawnedCount} cards, {missingCount} missing sprites");
             group.GetComponent<CardGroup>()?.RearrangeCards();
+        }
+
+        private void SpawnCard(string cardCode, Sprite sprite, int index, Transform parent)
+        {
+            GameObject card = Instantiate(cardPrefab, parent);
+            Vector3 localOffset = new Vector3(index * spacing.x, index * spacing.y, 0);
+            card.transform.position = parent.position + (Vector3)startOffset + localOffset;
+            card.name = $"Card_{cardCode}";
+
+            SetCardVisual(card, sprite, index);
+        }
+
+        private void SetCardVisual(GameObject card, Sprite sprite, int order)
+        {
+            Card cardComponent = card.GetComponent<Card>();
+            if (cardComponent?.cardVisualTransform == null)
+            {
+                Debug.LogError("Invalid card prefab setup");
+                return;
+            }
+
+            SpriteRenderer renderer = cardComponent.cardVisualTransform.GetComponent<SpriteRenderer>();
+            if (renderer == null)
+            {
+                Debug.LogError("Missing SpriteRenderer on card");
+                return;
+            }
+
+            renderer.sprite = sprite;
+            renderer.sortingLayerName = sortingLayerName;
+            renderer.sortingOrder = sortingOrderBase + order;
+        }
+
+        [System.Serializable]
+        private class CardDataWrapper
+        {
+            public DeckData data;
+        }
+
+        [System.Serializable]
+        private class DeckData
+        {
+            public List<string> deck;
         }
     }
 }

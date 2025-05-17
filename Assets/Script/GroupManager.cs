@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using RedGaint.Games.Core;
 using UnityEngine;
 
 public class GroupManager : MonoBehaviour
@@ -7,13 +8,14 @@ public class GroupManager : MonoBehaviour
     public static GroupManager Instance { get; private set; }
 
     [SerializeField] private GameObject groupPrefab;
-    [SerializeField] private GameObject groupPreviewPrefab;
     [SerializeField] private float groupSpacing = 3f;
+    [SerializeField] private float blinkInterval = 0.3f;
 
-    public Vector3 initialGroupPosition=new Vector3(-4,-2,0);
+    public Vector3 initialGroupPosition = new Vector3(-4, -2, 0);
     private List<GameObject> groups = new List<GameObject>();
-    private GameObject currentPreview;
+    private GameObject currentPreviewGroup;
     private Coroutine blinkingCoroutine;
+    private bool isPreviewActive;
 
     private void Awake()
     {
@@ -27,42 +29,72 @@ public class GroupManager : MonoBehaviour
         }
     }
 
-    public void ShowGroupPreviewAt(Vector3 position)
+    public void ShowGroupPreview()
     {
-        if (currentPreview == null)
-        {
-            currentPreview = Instantiate(groupPreviewPrefab);
-            blinkingCoroutine = StartCoroutine(BlinkOutline(currentPreview));
-        }
-
-        currentPreview.transform.position = GetSnappedGroupPosition();
+        if (isPreviewActive) return;
+        
+        currentPreviewGroup = Instantiate(groupPrefab, GetSnappedGroupPosition(), Quaternion.identity);
+        isPreviewActive = true;
+        blinkingCoroutine = StartCoroutine(BlinkGroupOutline());
     }
 
     public void HideGroupPreview()
     {
-        if (currentPreview != null)
+        if (!isPreviewActive) return;
+        
+        if (blinkingCoroutine != null)
         {
-            Destroy(currentPreview);
-            currentPreview = null;
-
-            if (blinkingCoroutine != null)
-            {
-                StopCoroutine(blinkingCoroutine);
-                blinkingCoroutine = null;
-            }
+            StopCoroutine(blinkingCoroutine);
+            blinkingCoroutine = null;
         }
+        
+        if (currentPreviewGroup != null)
+        {
+            Destroy(currentPreviewGroup);
+            currentPreviewGroup = null;
+        }
+        
+        isPreviewActive = false;
     }
 
-    public void CreateGroupFromCards(List<GameObject> cards)
+    public bool ConfirmGroupWithCards(List<GameObject> cards)
     {
-        Vector3 newGroupPos = GetSnappedGroupPosition();
-        GameObject newGroup = Instantiate(groupPrefab, newGroupPos, Quaternion.identity);
-        groups.Add(newGroup);
+        if(cards.Count == 0) return false;
+        
+        if (!isPreviewActive || currentPreviewGroup == null)
+            return false;
+        
+        // Stop blinking and make outline permanent
+        if (blinkingCoroutine != null)
+        {
+            StopCoroutine(blinkingCoroutine);
+            blinkingCoroutine = null;
+        }
+        
+        var lineRenderer = currentPreviewGroup.GetComponent<LineRenderer>();
+        if (lineRenderer != null)
+        {
+            lineRenderer.enabled = true;
+        }
 
+        // Parent all cards to the group
         foreach (var card in cards)
         {
-            card.transform.SetParent(newGroup.transform);
+            card.transform.SetParent(currentPreviewGroup.transform);
         }
+
+        // Add to groups list and prepare for next group
+        groups.Add(currentPreviewGroup);
+        currentPreviewGroup = null;
+        isPreviewActive = false;
+        return true;
+    }
+
+    public GameObject CreateEmptyGroup()
+    {
+        GameObject newGroup = Instantiate(groupPrefab, GetSnappedGroupPosition(), Quaternion.identity);
+        groups.Add(newGroup);
+        return newGroup;
     }
 
     private Vector3 GetSnappedGroupPosition()
@@ -72,28 +104,18 @@ public class GroupManager : MonoBehaviour
             Transform lastGroup = groups[groups.Count - 1].transform;
             return lastGroup.position + new Vector3(0, groupSpacing, 0);
         }
-        else
-        {
-            return initialGroupPosition; 
-        }
+        return initialGroupPosition;
     }
 
-    private IEnumerator BlinkOutline(GameObject outline)
+    private IEnumerator BlinkGroupOutline()
     {
-        var sr = outline.GetComponent<LineRenderer>();
-        while (outline != null)
+        var lineRenderer = currentPreviewGroup.GetComponent<LineRenderer>();
+        if (lineRenderer == null) yield break;
+
+        while (currentPreviewGroup != null)
         {
-            sr.enabled = !sr.enabled;
-            yield return new WaitForSeconds(0.3f);
+            lineRenderer.enabled = !lineRenderer.enabled;
+            yield return new WaitForSeconds(blinkInterval);
         }
     }
-    
-    public GameObject CreateEmptyGroup()
-    {
-        Vector3 newGroupPos = GetSnappedGroupPosition();
-        GameObject newGroup = Instantiate(groupPrefab, newGroupPos, Quaternion.identity);
-        groups.Add(newGroup);
-        return newGroup;
-    }
-
 }

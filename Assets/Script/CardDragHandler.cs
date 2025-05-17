@@ -47,7 +47,7 @@ namespace RedGaint.Games.Core
         {
             CurrentDragPosition = pointerWorldPos;
             int index = 0;
-            
+
             foreach (var kvp in dragOffsetPerCard)
             {
                 var draggedCard = kvp.Key;
@@ -55,9 +55,6 @@ namespace RedGaint.Games.Core
                 draggedCard.transform.position = pointerWorldPos + stackOffset;
                 index++;
             }
-
-            if (dragOffsetPerCard.Count > 1)
-                GroupManager.Instance.ShowGroupPreviewAt(pointerWorldPos);
         }
 
         public void EndDrag()

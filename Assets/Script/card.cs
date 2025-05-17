@@ -10,7 +10,7 @@ namespace RedGaint.Games.Core
     public class Card : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
         // Inspector References
-        [SerializeField] private Transform cardVisualTransform;
+        [SerializeField] public Transform cardVisualTransform;
         
         // Systems
         private CardDragHandler dragHandler;
@@ -24,6 +24,11 @@ namespace RedGaint.Games.Core
         public bool IsSelected { get; private set; }
         public bool IsBeingDragged => dragHandler?.IsDragging ?? false;
         private Vector3 visualBaseLocalPosition;
+        
+        // Card Identification
+        public string CardID { get; private set; }
+        public int CardValue { get; private set; } 
+        public string CardSuit { get; private set; } 
 
         #region Initialization
         private void Start()
@@ -32,10 +37,37 @@ namespace RedGaint.Games.Core
             ActiveCardGroup = GetComponentInParent<CardGroup>();
             visualBaseLocalPosition = cardVisualTransform.localPosition;
             dragHandler = new CardDragHandler(this, mainCamera);
-            
             SetupCollider();
         }
 
+        public void InitializeCard(string cardID)
+        {
+            CardID = cardID;
+        
+            // Parse suit (first character)
+            if (cardID.Length > 0)
+            {
+                CardSuit = cardID[0].ToString().ToUpper();
+            }
+
+            // Parse value (remaining characters)
+            string valuePart = cardID.Length > 1 ? cardID.Substring(1) : "";
+            CardValue = ParseCardValue(valuePart);
+        }
+        private int ParseCardValue(string valuePart)
+        {
+            switch (valuePart.ToUpper())
+            {
+                case "A": return 1;
+                case "J": return 11;
+                case "Q": return 12;
+                case "K": return 13;
+                default:
+                    if (int.TryParse(valuePart, out int numericValue))
+                        return numericValue;
+                    return 0; // Invalid value
+            }
+        }
         private void SetupCollider()
         {
             var visualRenderer = cardVisualTransform.GetComponent<SpriteRenderer>();
@@ -117,7 +149,12 @@ namespace RedGaint.Games.Core
             visualBaseLocalPosition = cardVisualTransform.localPosition;
             cardVisualTransform.localPosition += Vector3.up * 0.3f;
             IsSelected = true;
-            ActiveCardGroup.AddSelectedCard(this);
+            if(ActiveCardGroup!=null)
+                ActiveCardGroup.AddSelectedCard(this);
+            else
+            {
+                Deselect();
+            }
         }
 
         private void Deselect()
