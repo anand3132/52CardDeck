@@ -422,6 +422,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: GroupB
       objectReference: {fileID: 0}
+    - target: {fileID: 8083588861851541815, guid: a57f7c519d4b41949b03c19c3a023261, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -460,6 +464,7 @@ MonoBehaviour:
   groupSpacing: 3
   blinkInterval: 0.3
   initialGroupPosition: {x: -4, y: -2, z: 0}
+  logGroupEvents: 1
 --- !u!4 &1757058535
 Transform:
   m_ObjectHideFlags: 0

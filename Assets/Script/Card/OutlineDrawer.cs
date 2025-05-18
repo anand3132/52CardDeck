@@ -9,7 +9,6 @@ namespace RedGaint.Games.Core
     public class OutlineDrawer : MonoBehaviour
     {
         private LineRenderer lineRenderer;
-        private CardGroup cardGroup;
         public SpriteRenderer defaultSpriteRenderer;
         bool initialized = false;
 
@@ -31,8 +30,6 @@ namespace RedGaint.Games.Core
                 mat.color = Color.green;
                 lineRenderer.material = mat;
             }
-
-            cardGroup = GetComponent<CardGroup>();
             initialized = true;
         }
 
@@ -80,7 +77,6 @@ namespace RedGaint.Games.Core
 
             if (renderers == null || renderers.Count == 0)
             {
-//                Debug.Log("<color=red>OutlineDrawer: No 'Visual' renderers found. Drawing default outline.</color>");
                 DrawDefault1();
                 return;
             }
@@ -116,40 +112,13 @@ namespace RedGaint.Games.Core
                 bottomRight,
                 bottomLeft
                 ,topLeft
-                //,        // close rectangle
-                // center,
-                // bottomRight,    // diagonal 1
-                // center,
-                // bottomLeft,     // diagonal 2
-                // center,
-                // topRight        // diagonal 2
             };
 
             lineRenderer.positionCount = points.Length;
             lineRenderer.SetPositions(points);
         }
 
-        
-        private void DrawDefault()
-        {
-            Bounds defaultBounds;
-
-            if (defaultSpriteRenderer != null)
-            {
-                // Get bounds in local space
-                defaultBounds = defaultSpriteRenderer.bounds;
-                defaultBounds.center = transform.InverseTransformPoint(defaultBounds.center); // Convert to local space
-            }
-            else
-            {
-                Vector2 size = cardGroup != null ? cardGroup.size : new Vector2(2f, 2f);
-                defaultBounds = new Bounds(Vector3.zero, new Vector3(size.x, size.y, 0));
-            }
-
-            DrawOutline(defaultBounds);
-        }
-
-        private void DrawOutline(Bounds worldBounds)
+      private void DrawOutline(Bounds worldBounds)
         {
             Vector3 localCenter = transform.InverseTransformPoint(worldBounds.center);
             Vector3 size = worldBounds.size;

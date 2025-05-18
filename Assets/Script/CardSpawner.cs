@@ -66,7 +66,7 @@ namespace RedGaint.Games.Core
                 return;
             }
 
-            GameObject group = GroupManager.Instance.CreateEmptyGroup();
+            var group = GroupManager.Instance.CreateEmptyGroup();
             if (group == null)
             {
                 Debug.LogError("Failed to create card group");
@@ -93,7 +93,7 @@ namespace RedGaint.Games.Core
             }
 
             Debug.Log($"Spawned {spawnedCount} cards, {missingCount} missing sprites");
-            group.GetComponent<CardGroup>()?.RearrangeCards();
+            GameEventSystem.Trigger(new RequestRearrangeCardEvent{Group = group,Immediate=false});
         }
 
         private void SpawnCard(string cardCode, Sprite sprite, int index, Transform parent)

@@ -91,6 +91,9 @@ namespace RedGaint.Games.Core
         {
             Vector3 worldPos = GetWorldPositionFromEventData(eventData);
             dragHandler.BeginDrag(worldPos);
+
+            GameEventSystem.Trigger(new RequestRearrangeCardEvent{Group = ActiveCardGroup});
+            
         }
 
         public void OnDrag(PointerEventData eventData)
@@ -178,7 +181,7 @@ namespace RedGaint.Games.Core
             }
 
             ResetCardState();
-            ActiveCardGroup.RearrangeCards();
+            GameEventSystem.Trigger(new RequestRearrangeCardEvent{Group = ActiveCardGroup});
         }
 
         private void HandleDifferentGroupDrop(CardGroup dropTarget)
@@ -192,6 +195,8 @@ namespace RedGaint.Games.Core
 
             ResetCardState();
             MoveToNewGroup(dropTarget);
+            GameEventSystem.Trigger(new RequestRearrangeCardEvent{Group = ActiveCardGroup});
+
         }
 
         private void RevertToPreviousPosition()
@@ -207,7 +212,7 @@ namespace RedGaint.Games.Core
             }
 
             ResetCardState();
-            ActiveCardGroup.RearrangeCards();
+            GameEventSystem.Trigger(new RequestRearrangeCardEvent{Group = ActiveCardGroup});
         }
         #endregion
 
@@ -243,8 +248,19 @@ namespace RedGaint.Games.Core
             Vector3 localSnapPos = dropTarget.GetNextCardPosition();
             transform.SetParent(dropTarget.transform, false);
             transform.localPosition = localSnapPos;
+
+            if (ActiveCardGroup.IsGroupEmpty())
+            {
+                GameEventSystem.Trigger(new RequestGroupDestroyEvent(){Group = ActiveCardGroup});
+            }
+            else
+            {
+                GameEventSystem.Trigger(new RequestRearrangeCardEvent{Group = ActiveCardGroup});
+            }
+            
             ActiveCardGroup = dropTarget;
-            dropTarget.RearrangeCards();
+            
+            GameEventSystem.Trigger(new RequestRearrangeCardEvent{Group = dropTarget});
         }
         #endregion
 

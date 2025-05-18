@@ -31,7 +31,8 @@ namespace RedGaint.Games.Core
             }
 
             card.ResetCardState();
-            card.ActiveCardGroup.RearrangeCards();
+            GameEventSystem.Trigger(new RequestRearrangeCardEvent{Group = card.ActiveCardGroup});
+
         }
 
         private void HandleDifferentGroupDrop(CardGroup dropTarget)

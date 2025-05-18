@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
+//prng class
 namespace RedGaint.Games.Core
 {
     public class RandomNumberGenerator

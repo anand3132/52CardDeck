@@ -41,6 +41,8 @@ namespace RedGaint.Games.Core
                 StoreCardDragOffset(card, pointerWorldPos);
                 card.StorePreDragState();
             }
+            
+            GroupManager.Instance.ShowGroupPreview();
         }
 
         public void UpdateDrag(Vector3 pointerWorldPos)
@@ -61,6 +63,9 @@ namespace RedGaint.Games.Core
         {
             IsDragging = false;
             dragOffsetPerCard.Clear();
+            
+            if(!GroupManager.Instance.ConfirmGroupWithCards())
+                GroupManager.Instance.HideGroupPreview();
         }
 
         private void StoreCardDragOffset(Card card, Vector3 pointerWorldPos)
